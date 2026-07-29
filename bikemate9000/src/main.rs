@@ -68,7 +68,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let mut notification_stream = peripheral.notifications().await?;
                 while let Some(data) = notification_stream.next().await {
                     if data.uuid  == HEART_RATE_MEASUREMENT {
-                        info!("{:?}", data);
+                        let bpm = parse_heart_rate(&data.value);
+                        info!("Heart rate: {} bpm", bpm);
                     }
                 }
 
@@ -84,4 +85,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
     Ok(())
+}
+
+fn parse_heart_rate(value: &[u8]) -> u16 {
+    let flags = value[0];
+    let hr_16bit = flags & 0x01 != 0;
+
+    if hr_16bit {
+        u16::from_le_bytes([value[1], value[2]])
+    } else {
+        value[1] as u16
+    }
 }
