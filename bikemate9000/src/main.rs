@@ -7,6 +7,7 @@ use tokio::time;
 use tracing::{info, warn, error, debug, trace};
 use futures_util::StreamExt;
 use uuid::Uuid;
+mod stack;
 
 const HEART_RATE_MONITOR_NAME: &str = "HRM-Dual:863788";
 const HEART_RATE_MEASUREMENT: Uuid = Uuid::from_u128(0x00002a37_0000_1000_8000_00805f9b34fb);
