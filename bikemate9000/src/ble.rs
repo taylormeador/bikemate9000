@@ -61,34 +61,18 @@ async fn connect_to_garmin() -> Result<Peripheral, Box<dyn Error>> {
     Err(Box::from("Error connecting to Garmin heart rate monitor"))
 }
 
-pub async fn get_heart_rate_stream() -> HeartRateStream {  
+pub async fn get_heart_rate_stream() -> HeartRateStream {
     let peripheral = connect_to_garmin().await.expect("garmin error handling not implemented");
-    peripheral.discover_services().await;
+    peripheral.discover_services().await.expect("failed to discover services");
     let chars = peripheral.characteristics();
     let hr_char = chars.iter().find(|c| c.uuid == HEART_RATE_MEASUREMENT).expect("Unable to find heart rate measurement characteristic");
-    peripheral.subscribe(hr_char).await;
+    peripheral.subscribe(hr_char).await.expect("failed to subscribe");
 
-    let raw_stream = peripheral.notifications().await?; // yields the library's raw item type
-    let hr_stream: HeartRateStream = Box::pin(
-        raw_stream.map(|raw_notification| parse_heart_rate(raw_notification))
-    );
+    let raw_stream = peripheral.notifications().await.expect("failed to get notification stream");
+    let parsed_stream = raw_stream.map(|raw_notification| parse_heart_rate(&raw_notification.value));
+    let hr_stream: HeartRateStream = Box::pin(parsed_stream);
 
     hr_stream
-    // while let Some(data) = notification_stream.next().await {
-    //     if data.uuid  == HEART_RATE_MEASUREMENT {
-    //         let bpm = parse_heart_rate(&data.value);
-    //         info!("Heart rate: {} bpm", bpm);
-    //     }
-    // }
-
-    // if is_connected {
-    //     info!("Disconnecting from peripheral {:?}...", &local_name);
-    //     peripheral
-    //         .disconnect()
-    //         .await
-    //         .expect("Error disconnecting from BLE peripheral");
-    
-    // }
 }
 
 fn parse_heart_rate(value: &[u8]) -> HeartRateReading {

@@ -1,4 +1,4 @@
-use futures_util::Stream;
+use futures_util::{Stream, StreamExt};
 use tracing::{info, warn, error, debug, trace};
 
 use crate::ble;
@@ -15,8 +15,8 @@ pub async fn get_heart_rate_stream(hr_source: HeartRateSource) -> HeartRateStrea
     }
 }
 
-pub async fn do_heart_rate_stuff(hr_stream: HeartRateStream) {
-    while let Some(hr_reading) = hr_stream.next().await? {
+pub async fn do_heart_rate_stuff(hr_stream: &mut HeartRateStream) {
+    while let Some(hr_reading) = hr_stream.next().await {
         info!("hr reading: {:?}", hr_reading);
     }
 }

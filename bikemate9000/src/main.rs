@@ -3,6 +3,7 @@ use tracing::{info, warn, error, debug, trace};
 mod stack;
 mod ble;
 mod heart_rate;
+mod mock;
 use clap::{Parser, ValueEnum};
 
 #[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
@@ -13,7 +14,7 @@ enum HeartRateSource {
 
 #[derive(Parser)]
 struct Cli {
-    #[arg(short, long, value_enum)]
+    #[arg(long, value_enum)]
     hr_source: Option<HeartRateSource>,
 }
 
@@ -29,8 +30,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Some(arg) => arg
     };
 
-    let hr_stream = heart_rate::get_heart_rate_stream(hr_source);
-    heart_rate::do_heart_rate_stuff(hr_stream);
+    let mut hr_stream = heart_rate::get_heart_rate_stream(hr_source).await;
+    heart_rate::do_heart_rate_stuff(&mut hr_stream).await;
 
     Ok(())
 }
