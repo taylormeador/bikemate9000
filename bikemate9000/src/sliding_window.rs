@@ -114,4 +114,12 @@ impl SlidingWindow {
         }
         
     }
+
+    pub fn get_pct_change(&self) -> f64 {
+        if let (Some(newest), Some(oldest)) = (self.back_stack.top(), self.front_stack.top()) {
+            newest.hr_reading as f64 / oldest.hr_reading as f64 - 1.0
+        } else {
+            0.0
+        }
+    }
 }

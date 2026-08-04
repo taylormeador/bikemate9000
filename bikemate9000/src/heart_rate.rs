@@ -36,7 +36,7 @@ pub async fn do_heart_rate_stuff(hr_stream: &mut HeartRateStream) {
         let ts = since_the_epoch.as_millis();
 
         five_sec_window.handle_reading(HeartRateReading{ ts: ts, hr_reading: hr_reading });
-        info!("min: {:?} max: {:?} avg: {:?}", five_sec_window.get_min().hr_reading, five_sec_window.get_max().hr_reading, five_sec_window.get_average());
+        info!("min: {:?} max: {:?} avg: {:?} chg: {:?}%", five_sec_window.get_min().hr_reading, five_sec_window.get_max().hr_reading, five_sec_window.get_average(), five_sec_window.get_pct_change());
     }
 }
 
