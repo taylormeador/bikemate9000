@@ -1,33 +1,38 @@
-struct MinStack {
-    values: Vec<u64>,
-    min_values: Vec<u64>
+use crate::heart_rate::{HeartRateReading, RichHeartRateReading};
+
+
+
+#[derive(Debug)]
+pub struct MinStack {
+    values: Vec<RichHeartRateReading>,
+    min_values: Vec<RichHeartRateReading>
 }
 
 impl MinStack {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self { values: Vec::new(), min_values: Vec::new() }
     }
 
-    fn push(&mut self, v: u64) {
+    pub fn push(&mut self, v: RichHeartRateReading) {
         match self.get_min() {
-            Some(val) => if v <= val { self.min_values.push(v); }
+            Some(val) => if v.hr_reading <= val.hr_reading { self.min_values.push(v); }
             None => self.min_values.push(v)
         }
         self.values.push(v);
     }
 
-    fn pop(&mut self) -> Option<u64> {
+    pub fn pop(&mut self) -> Option<RichHeartRateReading> {
         let v = self.values.pop();
         let min_v = self.get_min();
         if let (Some(popped), Some(min)) = (v, min_v) {
-            if popped == min {
+            if popped.hr_reading == min.hr_reading {
                 self.min_values.pop();
             }
         }
         v
     }
 
-    fn get_min(&self) -> Option<u64> {
+    pub fn get_min(&self) -> Option<RichHeartRateReading> {
         self.min_values.last().copied()
     }
 } 
