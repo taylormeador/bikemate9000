@@ -5,16 +5,22 @@ use crate::heart_rate::{HeartRateReading};
 
 pub struct SlidingWindow {
     duration: u128,  // time in millis
+    count: u64,
+    sum: u64,
     back_stack: stack::MinMaxStack,
     front_stack: stack::MinMaxStack
 }
 
 impl SlidingWindow {
     pub fn new(duration: u128) -> Self {
+        let count = 0;
+        let sum = 0;
         let back_stack = stack::MinMaxStack::new();
         let front_stack = stack::MinMaxStack::new();
         SlidingWindow{
             duration,
+            count,
+            sum,
             back_stack,
             front_stack
         }
@@ -34,6 +40,8 @@ impl SlidingWindow {
 
     pub fn handle_reading(&mut self, hr_reading: HeartRateReading) {
         self.back_stack.push(hr_reading);
+        self.count += 1;
+        self.sum += hr_reading.hr_reading as u64;
         let cutoff = hr_reading.ts - self.duration; // TODO what if this is negative somehow
         
         if self.front_stack.is_empty() {
@@ -43,56 +51,67 @@ impl SlidingWindow {
         while let Some(item) = self.front_stack.top() {
             if item.ts < cutoff {
                 info!("evicting: {:?}", item);
+                self.sum -= item.hr_reading as u64;
                 self.front_stack.pop();
+                self.count -= 1;
             } else {
                 break;
             }
         }
     }
 
-    pub fn get_min(&self) -> Option<HeartRateReading> {
+    pub fn get_min(&self) -> HeartRateReading {
         let front_min = self.front_stack.get_min();
         let back_min = self.back_stack.get_min();
         match (front_min, back_min) {
             (Some(a), Some(b)) => {
                 if a.hr_reading < b.hr_reading {
-                    front_min
+                    a
                 } else {
-                    back_min
+                    b
                 }
             },
-            (Some(_a), None) => {
-                front_min
+            (Some(a), None) => {
+                a
             },
-            (None, Some(_b)) => {
-                back_min
+            (None, Some(b)) => {
+                b
             },
             (None, None) => {
-                None
+                HeartRateReading{ ts: 0, hr_reading: 0 }
             }
         }
     }
 
-    pub fn get_max(&self) -> Option<HeartRateReading> {
+    pub fn get_max(&self) -> HeartRateReading {
         let front_max = self.front_stack.get_max();
         let back_max = self.back_stack.get_max();
         match (front_max, back_max) {
             (Some(a), Some(b)) => {
                 if a.hr_reading > b.hr_reading {
-                    front_max
+                    a
                 } else {
-                    back_max
+                    b
                 }
             },
-            (Some(_a), None) => {
-                front_max
+            (Some(a), None) => {
+                a
             },
-            (None, Some(_b)) => {
-                back_max
+            (None, Some(b)) => {
+                b
             },
             (None, None) => {
-                None
+                HeartRateReading{ ts: 0, hr_reading: 0 }
             }
         }
+    }
+
+    pub fn get_average(&self) -> f64 {
+        if self.count == 0 {
+            0.0
+        } else {
+            self.sum as f64 / self.count as f64
+        }
+        
     }
 }
