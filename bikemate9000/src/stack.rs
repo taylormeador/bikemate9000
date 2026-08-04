@@ -1,11 +1,9 @@
-use crate::heart_rate::{HeartRateReading, RichHeartRateReading};
-
-
+use crate::heart_rate::HeartRateReading;
 
 #[derive(Debug)]
 pub struct MinStack {
-    values: Vec<RichHeartRateReading>,
-    min_values: Vec<RichHeartRateReading>
+    values: Vec<HeartRateReading>,
+    min_values: Vec<HeartRateReading>
 }
 
 impl MinStack {
@@ -13,7 +11,7 @@ impl MinStack {
         Self { values: Vec::new(), min_values: Vec::new() }
     }
 
-    pub fn push(&mut self, v: RichHeartRateReading) {
+    pub fn push(&mut self, v: HeartRateReading) {
         match self.get_min() {
             Some(val) => if v.hr_reading <= val.hr_reading { self.min_values.push(v); }
             None => self.min_values.push(v)
@@ -21,7 +19,7 @@ impl MinStack {
         self.values.push(v);
     }
 
-    pub fn pop(&mut self) -> Option<RichHeartRateReading> {
+    pub fn pop(&mut self) -> Option<HeartRateReading> {
         let v = self.values.pop();
         let min_v = self.get_min();
         if let (Some(popped), Some(min)) = (v, min_v) {
@@ -32,7 +30,16 @@ impl MinStack {
         v
     }
 
-    pub fn get_min(&self) -> Option<RichHeartRateReading> {
+    pub fn peek(&self) -> Option<&HeartRateReading> {
+        self.values.last()
+    }
+
+    pub fn get_min(&self) -> Option<HeartRateReading> {
         self.min_values.last().copied()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.values.is_empty()
+    }
+
 } 

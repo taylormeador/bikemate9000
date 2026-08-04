@@ -6,7 +6,7 @@ use tokio::time;
 use tracing::{info, warn, error, debug, trace};
 use futures_util::StreamExt;
 use uuid::Uuid;
-use crate::heart_rate::{HeartRateStream, HeartRateReading};
+use crate::heart_rate::{HeartRateStream, RawHeartRateReading};
 
 const HEART_RATE_MONITOR_NAME: &str = "HRM-Dual:863788";
 const HEART_RATE_MEASUREMENT: Uuid = Uuid::from_u128(0x00002a37_0000_1000_8000_00805f9b34fb);
@@ -75,7 +75,7 @@ pub async fn get_heart_rate_stream() -> HeartRateStream {
     hr_stream
 }
 
-fn parse_heart_rate(value: &[u8]) -> HeartRateReading {
+fn parse_heart_rate(value: &[u8]) -> RawHeartRateReading {
     let flags = value[0];
     let hr_16bit = flags & 0x01 != 0;
 

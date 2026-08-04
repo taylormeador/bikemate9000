@@ -4,6 +4,7 @@ mod stack;
 mod ble;
 mod heart_rate;
 mod mock;
+mod sliding_window;
 use clap::{Parser, ValueEnum};
 
 #[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
