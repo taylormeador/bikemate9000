@@ -1,12 +1,11 @@
 use futures_util::{Stream, StreamExt};
-use tracing::{info, warn, error, debug, trace};
+use tracing::{info};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::ble;
 use crate::mock;
 use crate::HeartRateSource;
 use crate::sliding_window;
-use crate::stack;
 
 pub type RawHeartRateReading = u16;
 pub type HeartRateStream = std::pin::Pin<Box<dyn Stream<Item = RawHeartRateReading> + Send>>;

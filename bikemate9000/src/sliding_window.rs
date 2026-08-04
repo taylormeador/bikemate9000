@@ -5,14 +5,14 @@ use crate::heart_rate;
 
 pub struct SlidingWindow {
     duration: u128,  // time in millis
-    back_stack: stack::MinStack,
-    front_stack: stack::MinStack
+    back_stack: stack::MinMaxStack,
+    front_stack: stack::MinMaxStack
 }
 
 impl SlidingWindow {
     pub fn new(duration: u128) -> Self {
-        let back_stack = stack::MinStack::new();
-        let front_stack = stack::MinStack::new();
+        let back_stack = stack::MinMaxStack::new();
+        let front_stack = stack::MinMaxStack::new();
         SlidingWindow{
             duration,
             back_stack,
@@ -40,7 +40,7 @@ impl SlidingWindow {
             self.transfer_to_front();
         }
 
-        while let Some(item) = self.front_stack.peek() {
+        while let Some(item) = self.front_stack.top() {
             if item.ts < cutoff {
                 info!("evicting: {:?}", item);
                 self.front_stack.pop();

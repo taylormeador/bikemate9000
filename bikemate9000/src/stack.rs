@@ -1,14 +1,16 @@
 use crate::heart_rate::HeartRateReading;
 
 #[derive(Debug)]
-pub struct MinStack {
+pub struct MinMaxStack {
     values: Vec<HeartRateReading>,
-    min_values: Vec<HeartRateReading>
+    min_values: Vec<HeartRateReading>,
+    max_values: Vec<HeartRateReading>
 }
 
-impl MinStack {
+// Uses three stacks to achieve O(1) time for push, pop, get_min, and get_max.
+impl MinMaxStack {
     pub fn new() -> Self {
-        Self { values: Vec::new(), min_values: Vec::new() }
+        Self { values: Vec::new(), min_values: Vec::new(), max_values: Vec::new() }
     }
 
     pub fn push(&mut self, v: HeartRateReading) {
@@ -16,21 +18,36 @@ impl MinStack {
             Some(val) => if v.hr_reading <= val.hr_reading { self.min_values.push(v); }
             None => self.min_values.push(v)
         }
+
+        match self.get_max() {
+            Some(val) => if v.hr_reading >= val.hr_reading { self.max_values.push(v); }
+            None => self.max_values.push(v)
+        }
+
         self.values.push(v);
     }
 
     pub fn pop(&mut self) -> Option<HeartRateReading> {
         let v = self.values.pop();
+
         let min_v = self.get_min();
         if let (Some(popped), Some(min)) = (v, min_v) {
             if popped.hr_reading == min.hr_reading {
                 self.min_values.pop();
             }
         }
+
+        let max_v = self.get_max();
+        if let (Some(popped), Some(max)) = (v, max_v) {
+            if popped.hr_reading == max.hr_reading {
+                self.max_values.pop();
+            }
+        }
+
         v
     }
 
-    pub fn peek(&self) -> Option<&HeartRateReading> {
+    pub fn top(&self) -> Option<&HeartRateReading> {
         self.values.last()
     }
 
@@ -38,8 +55,11 @@ impl MinStack {
         self.min_values.last().copied()
     }
 
+    pub fn get_max(&self) -> Option<HeartRateReading> {
+        self.max_values.last().copied()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.values.is_empty()
     }
-
-} 
+}
