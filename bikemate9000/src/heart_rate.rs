@@ -36,6 +36,7 @@ pub async fn do_heart_rate_stuff(hr_stream: &mut HeartRateStream) {
         let ts = since_the_epoch.as_millis();
 
         five_sec_window.handle_reading(HeartRateReading{ ts: ts, hr_reading: hr_reading });
+        info!("min: {:?} max: {:?}", five_sec_window.get_min(), five_sec_window.get_max());
     }
 }
 

@@ -1,7 +1,7 @@
 use tracing::info;
 
 use crate::stack;
-use crate::heart_rate;
+use crate::heart_rate::{HeartRateReading};
 
 pub struct SlidingWindow {
     duration: u128,  // time in millis
@@ -32,7 +32,7 @@ impl SlidingWindow {
         } 
     }
 
-    pub fn handle_reading(&mut self, hr_reading: heart_rate::HeartRateReading) {
+    pub fn handle_reading(&mut self, hr_reading: HeartRateReading) {
         self.back_stack.push(hr_reading);
         let cutoff = hr_reading.ts - self.duration; // TODO what if this is negative somehow
         
@@ -46,6 +46,52 @@ impl SlidingWindow {
                 self.front_stack.pop();
             } else {
                 break;
+            }
+        }
+    }
+
+    pub fn get_min(&self) -> Option<HeartRateReading> {
+        let front_min = self.front_stack.get_min();
+        let back_min = self.back_stack.get_min();
+        match (front_min, back_min) {
+            (Some(a), Some(b)) => {
+                if a.hr_reading < b.hr_reading {
+                    front_min
+                } else {
+                    back_min
+                }
+            },
+            (Some(_a), None) => {
+                front_min
+            },
+            (None, Some(_b)) => {
+                back_min
+            },
+            (None, None) => {
+                None
+            }
+        }
+    }
+
+    pub fn get_max(&self) -> Option<HeartRateReading> {
+        let front_max = self.front_stack.get_max();
+        let back_max = self.back_stack.get_max();
+        match (front_max, back_max) {
+            (Some(a), Some(b)) => {
+                if a.hr_reading > b.hr_reading {
+                    front_max
+                } else {
+                    back_max
+                }
+            },
+            (Some(_a), None) => {
+                front_max
+            },
+            (None, Some(_b)) => {
+                back_max
+            },
+            (None, None) => {
+                None
             }
         }
     }
