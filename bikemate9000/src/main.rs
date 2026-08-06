@@ -5,6 +5,7 @@ mod ble;
 mod heart_rate;
 mod mock;
 mod sliding_window;
+mod heap;
 use clap::{Parser, ValueEnum};
 
 #[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
@@ -26,13 +27,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let args = Cli::parse();
 
-    let hr_source = match args.hr_source {
-        None => HeartRateSource::Ble,
-        Some(arg) => arg
-    };
+    let mut min_heap = heap::MinHeap::new(3);
+    min_heap.insert(3);
+    info!("{:?}", min_heap.top());
+    min_heap.insert(2);
+    min_heap.insert(4);
+    min_heap.insert(1);
+    info!("{:?}", min_heap.top());
+    min_heap.insert(4);
+    min_heap.insert(4);
+    min_heap.insert(4);
+    min_heap.insert(5);
+    info!("{:?}", min_heap.top());
 
-    let mut hr_stream = heart_rate::get_heart_rate_stream(hr_source).await;
-    heart_rate::do_heart_rate_stuff(&mut hr_stream).await;
+    // let hr_source = match args.hr_source {
+    //     None => HeartRateSource::Ble,
+    //     Some(arg) => arg
+    // };
+
+    // let mut hr_stream = heart_rate::get_heart_rate_stream(hr_source).await;
+    // heart_rate::do_heart_rate_stuff(&mut hr_stream).await;
 
     Ok(())
 }
