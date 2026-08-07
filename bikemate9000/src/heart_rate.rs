@@ -1,11 +1,12 @@
 use futures_util::{Stream, StreamExt};
+use tokio_util::sync::CancellationToken;
 use tracing::{info};
 use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::sync::mpsc::Sender;
 
 use crate::ble;
 use crate::mock;
 use crate::HeartRateSource;
-use crate::sliding_window;
 
 pub type RawHeartRateReading = u16;
 pub type HeartRateStream = std::pin::Pin<Box<dyn Stream<Item = RawHeartRateReading> + Send>>;
@@ -23,20 +24,36 @@ pub async fn get_heart_rate_stream(hr_source: HeartRateSource) -> HeartRateStrea
     }
 }
 
-pub async fn do_heart_rate_stuff(hr_stream: &mut HeartRateStream) {
-    let mut five_sec_window = sliding_window::SlidingWindow::new(5000);
-    while let Some(hr_reading) = hr_stream.next().await {
-        info!("hr reading: {:?}", hr_reading);
+async fn handle_reading(hr_reading: RawHeartRateReading, hr_tx: &Sender<HeartRateReading>) {
+    info!("Heart rate reading: {:?}", hr_reading);
 
-        // Enrich with timestamp
-        let start = SystemTime::now();
-        let since_the_epoch = start
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards");
-        let ts = since_the_epoch.as_millis();
+    // Enrich with timestamp
+    let start = SystemTime::now();
+    let since_the_epoch = start
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    let ts = since_the_epoch.as_millis();
 
-        five_sec_window.handle_reading(HeartRateReading{ ts: ts, hr_reading: hr_reading });
-        info!("min: {:?} max: {:?} avg: {:?} chg: {:?}%", five_sec_window.get_min().hr_reading, five_sec_window.get_max().hr_reading, five_sec_window.get_average(), five_sec_window.get_pct_change());
+    hr_tx.send(HeartRateReading{ ts: ts, hr_reading: hr_reading }).await.unwrap();
+}
+
+pub async fn ingest_heart_rate(hr_source: HeartRateSource, hr_tx: Sender<HeartRateReading>, token: CancellationToken) {
+    let mut hr_stream = get_heart_rate_stream(hr_source).await;
+
+    // Race between message received and ctrl-c
+    loop {
+        tokio::select! {
+            _ = token.cancelled() => {
+                info!("TODO shutting down hr ingestion...");
+                break;
+            }
+            msg = hr_stream.next() => { 
+                match msg {
+                    Some(msg) => { handle_reading(msg, &hr_tx).await }
+                    None => break
+                }
+            }
+        }
     }
 }
 
