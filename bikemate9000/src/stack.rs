@@ -15,12 +15,12 @@ impl MinMaxStack {
 
     pub fn push(&mut self, v: HeartRateReading) {
         match self.get_min() {
-            Some(val) => if v.hr_reading <= val.hr_reading { self.min_values.push(v); }
+            Some(val) => if v.hr <= val.hr { self.min_values.push(v); }
             None => self.min_values.push(v)
         }
 
         match self.get_max() {
-            Some(val) => if v.hr_reading >= val.hr_reading { self.max_values.push(v); }
+            Some(val) => if v.hr >= val.hr { self.max_values.push(v); }
             None => self.max_values.push(v)
         }
 
@@ -32,14 +32,14 @@ impl MinMaxStack {
 
         let min_v = self.get_min();
         if let (Some(popped), Some(min)) = (v, min_v) {
-            if popped.hr_reading == min.hr_reading {
+            if popped.hr == min.hr {
                 self.min_values.pop();
             }
         }
 
         let max_v = self.get_max();
         if let (Some(popped), Some(max)) = (v, max_v) {
-            if popped.hr_reading == max.hr_reading {
+            if popped.hr == max.hr {
                 self.max_values.pop();
             }
         }

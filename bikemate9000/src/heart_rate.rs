@@ -7,6 +7,7 @@ use tokio::sync::mpsc::Sender;
 use crate::ble;
 use crate::mock;
 use crate::HeartRateSource;
+use crate::aggregator;
 
 pub type RawHeartRateReading = u16;
 pub type HeartRateStream = std::pin::Pin<Box<dyn Stream<Item = RawHeartRateReading> + Send>>;
@@ -14,7 +15,7 @@ pub type HeartRateStream = std::pin::Pin<Box<dyn Stream<Item = RawHeartRateReadi
 #[derive(Clone, Copy, Debug)]
 pub struct HeartRateReading {
     pub ts: u128,
-    pub hr_reading: RawHeartRateReading
+    pub hr: RawHeartRateReading
 }
 
 pub async fn get_heart_rate_stream(hr_source: HeartRateSource) -> HeartRateStream {
@@ -24,8 +25,8 @@ pub async fn get_heart_rate_stream(hr_source: HeartRateSource) -> HeartRateStrea
     }
 }
 
-async fn handle_reading(hr_reading: RawHeartRateReading, hr_tx: &Sender<HeartRateReading>) {
-    info!("Heart rate reading: {:?}", hr_reading);
+async fn handle_reading(hr_reading: RawHeartRateReading, tx: Sender<aggregator::Event>) {
+    info!("HR reading: {:?}", hr_reading);
 
     // Enrich with timestamp
     let start = SystemTime::now();
@@ -34,10 +35,11 @@ async fn handle_reading(hr_reading: RawHeartRateReading, hr_tx: &Sender<HeartRat
         .expect("Time went backwards");
     let ts = since_the_epoch.as_millis();
 
-    hr_tx.send(HeartRateReading{ ts: ts, hr_reading: hr_reading }).await.unwrap();
+    let event = aggregator::Event::HeartRate(HeartRateReading{ ts: ts, hr: hr_reading });
+    tx.send(event).await.unwrap();
 }
 
-pub async fn ingest_heart_rate(hr_source: HeartRateSource, hr_tx: Sender<HeartRateReading>, token: CancellationToken) {
+pub async fn ingest_heart_rate(hr_source: HeartRateSource, hr_tx: Sender<aggregator::Event>, token: CancellationToken) {
     let mut hr_stream = get_heart_rate_stream(hr_source).await;
 
     // Race between message received and ctrl-c
@@ -49,7 +51,7 @@ pub async fn ingest_heart_rate(hr_source: HeartRateSource, hr_tx: Sender<HeartRa
             }
             msg = hr_stream.next() => { 
                 match msg {
-                    Some(msg) => { handle_reading(msg, &hr_tx).await }
+                    Some(msg) => { handle_reading(msg, hr_tx.clone()).await }
                     None => break
                 }
             }

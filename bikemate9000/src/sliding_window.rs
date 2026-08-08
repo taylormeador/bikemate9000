@@ -41,7 +41,7 @@ impl SlidingWindow {
     pub fn handle_reading(&mut self, hr_reading: HeartRateReading) {
         self.back_stack.push(hr_reading);
         self.count += 1;
-        self.sum += hr_reading.hr_reading as u64;
+        self.sum += hr_reading.hr as u64;
         let cutoff = hr_reading.ts - self.duration; // TODO what if this is negative somehow
         
         if self.front_stack.is_empty() {
@@ -51,7 +51,7 @@ impl SlidingWindow {
         while let Some(item) = self.front_stack.top() {
             if item.ts < cutoff {
                 info!("evicting: {:?}", item);
-                self.sum -= item.hr_reading as u64;
+                self.sum -= item.hr as u64;
                 self.front_stack.pop();
                 self.count -= 1;
             } else {
@@ -65,7 +65,7 @@ impl SlidingWindow {
         let back_min = self.back_stack.get_min();
         match (front_min, back_min) {
             (Some(a), Some(b)) => {
-                if a.hr_reading < b.hr_reading {
+                if a.hr < b.hr {
                     a
                 } else {
                     b
@@ -78,7 +78,7 @@ impl SlidingWindow {
                 b
             },
             (None, None) => {
-                HeartRateReading{ ts: 0, hr_reading: 0 }
+                HeartRateReading{ ts: 0, hr: 0 }
             }
         }
     }
@@ -88,7 +88,7 @@ impl SlidingWindow {
         let back_max = self.back_stack.get_max();
         match (front_max, back_max) {
             (Some(a), Some(b)) => {
-                if a.hr_reading > b.hr_reading {
+                if a.hr > b.hr {
                     a
                 } else {
                     b
@@ -101,7 +101,7 @@ impl SlidingWindow {
                 b
             },
             (None, None) => {
-                HeartRateReading{ ts: 0, hr_reading: 0 }
+                HeartRateReading{ ts: 0, hr: 0 }
             }
         }
     }
@@ -117,7 +117,7 @@ impl SlidingWindow {
 
     pub fn get_pct_change(&self) -> f64 {
         if let (Some(newest), Some(oldest)) = (self.back_stack.top(), self.front_stack.top()) {
-            newest.hr_reading as f64 / oldest.hr_reading as f64 - 1.0
+            newest.hr as f64 / oldest.hr as f64 - 1.0
         } else {
             0.0
         }
